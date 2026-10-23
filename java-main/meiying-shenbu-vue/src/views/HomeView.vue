@@ -36,7 +36,7 @@
         <div class="sec-head">
           <h3 class="sec-title">精选一案</h3>
           <span class="sec-line"></span>
-          <a class="sec-more" href="javascript:;" @click="soon">更多案卷 ›</a>
+          <a class="sec-more" href="javascript:;" @click="router.push('/series')">全部剧集 ›</a>
         </div>
 
         <div v-if="featured" class="featured" @click="openDrama(featured)">
@@ -62,8 +62,13 @@
               <span class="f-score">★ {{ featured.score.toFixed(1) }}</span>
             </div>
             <div class="f-actions">
-              <button class="btn-main" type="button" @click.stop="soon">▶ 开始追案</button>
-              <button class="btn-ghost" type="button" @click.stop="soon">＋ 加入案卷</button>
+              <button class="btn-main" type="button" @click.stop="openDrama(featured)">▶ 开始追案</button>
+              <button
+                class="btn-ghost"
+                type="button"
+                :class="{ added: featuredInCases }"
+                @click.stop="toggleFeaturedCase"
+              >{{ featuredInCases ? '✓ 已在案卷' : '＋ 加入案卷' }}</button>
             </div>
           </div>
         </div>
@@ -78,7 +83,7 @@
             <a class="sec-more" href="javascript:;" @click="clearQuery">✕ 收起结果</a>
           </template>
           <template v-else>
-            <a class="sec-more" href="javascript:;" @click="soon">全部剧集 ›</a>
+            <a class="sec-more" href="javascript:;" @click="router.push('/series')">全部剧集 ›</a>
           </template>
         </div>
 
@@ -116,7 +121,7 @@
         <div class="sec-head">
           <h3 class="sec-title">悬案榜</h3>
           <span class="sec-line"></span>
-          <a class="sec-more" href="javascript:;" @click="soon">完整榜单 ›</a>
+          <a class="sec-more" href="javascript:;" @click="router.push('/rank')">完整榜单 ›</a>
         </div>
 
         <ol class="rank">
@@ -140,18 +145,19 @@
       </section>
     </main>
 
-    <SiteFooter @nav="onFootNav" />
+    <SiteFooter />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BackgroundScene from '../components/BackgroundScene.vue'
 import SiteHeader from '../components/layout/SiteHeader.vue'
 import SiteFooter from '../components/layout/SiteFooter.vue'
 import SearchBar from '../components/home/SearchBar.vue'
 import DramaCard from '../components/drama/DramaCard.vue'
-import { HERO_IMAGE, HOT_WORDS } from '../data/dramas'
+import { HOT_WORDS } from '../data/dramas'
 import {
   CATEGORIES,
   fetchFeatured,
@@ -159,7 +165,11 @@ import {
   fetchRank,
   searchDramas
 } from '../api/home'
+import { isInCases, toggleCase } from '../store/cases'
 import { showToast } from '../store/shell'
+
+const router = useRouter()
+const route = useRoute()
 
 const scrolled = ref(false)
 const searchRef = ref(null)
@@ -182,6 +192,9 @@ onMounted(async () => {
   fetchFeatured().then((r) => { featured.value = r.data })
   fetchRank(5).then((r) => { rankList.value = r.data })
   await loadHot(activeCategory.value)
+
+  // 从内页点搜索图标过来的：把焦点交给搜索框
+  if (route.query.focus === 'search') focusSearch()
 })
 
 async function loadHot(category) {
@@ -260,19 +273,22 @@ function clearQuery() {
   query.value = null
 }
 
-// 剧集详情页还没做，先给个反馈
+// 剧集详情页已就位：点卡片 / 榜单 / 精选都翻到对应卷宗
 function openDrama(drama) {
-  showToast(`《${drama.title}》卷宗尚未展开，敬请候令。`)
+  router.push(`/drama/${drama.id}`)
 }
 
-function soon() {
-  showToast('此卷正在缉捕中，敬请候令。')
-}
+/** 精选一案是否已收入案卷 */
+const featuredInCases = computed(() => (featured.value ? isInCases(featured.value.id) : false))
 
-// 页脚链接：只有首页是真实页面，其余先弹提示
-function onFootNav(link) {
-  if (link.path === '/') return
-  showToast(`「${link.label}」这一卷尚未展开，敬请候令。`)
+function toggleFeaturedCase() {
+  if (!featured.value) return
+  const added = toggleCase(featured.value.id)
+  showToast(
+    added
+      ? `《${featured.value.title}》已收入案卷。`
+      : `已从案卷中取出《${featured.value.title}》。`
+  )
 }
 </script>
 
@@ -575,6 +591,12 @@ function onFootNav(link) {
   border-color: var(--gold);
   color: var(--gold);
   box-shadow: 0 0 18px rgba(216, 176, 106, 0.22);
+}
+/* 已收入案卷的状态 */
+.btn-ghost.added {
+  color: var(--gold);
+  border-color: rgba(216, 176, 106, 0.6);
+  background: rgba(216, 176, 106, 0.08);
 }
 
 /* ── 分类 chips ─────────────────────────────── */

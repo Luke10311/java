@@ -18,7 +18,7 @@
           :key="item.key"
           href="javascript:;"
           class="menu-item"
-          :class="{ active: item.key === active }"
+          :class="{ active: item.key === current }"
           @click="go(item)"
         >
           {{ item.label }}
@@ -26,9 +26,15 @@
         </a>
       </nav>
 
-      <!-- 右侧：搜索入口 + 登录态 -->
+      <!-- 右侧：搜索入口 + 后台入口 + 登录态 -->
       <div class="side">
         <button class="icon-btn" type="button" title="展开搜索" @click="emit('focus-search')">🔍</button>
+
+        <!-- 后台管理系统入口：进 /admin/login，视觉上跟前台的「验牌入城」区分开 -->
+        <button class="admin-btn" type="button" title="进入后台管理系统" @click="router.push('/admin/login')">
+          <i class="glyph">⚙</i>
+          <span>后台管理系统</span>
+        </button>
 
         <template v-if="shell.user">
           <span class="who" :title="`当前登录：${shell.user}`">
@@ -45,12 +51,13 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { logout, shell, showToast } from '../../store/shell'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { logout, shell } from '../../store/shell'
 
-defineProps({
-  /** 当前高亮的菜单 key */
-  active: { type: String, default: 'home' },
+const props = defineProps({
+  /** 当前高亮的菜单 key；不传就从路由 meta.nav 取 */
+  active: { type: String, default: '' },
   /** 页面已滚动，导航栏加深底色 */
   solid: { type: Boolean, default: false }
 })
@@ -58,22 +65,26 @@ defineProps({
 const emit = defineEmits(['focus-search'])
 
 const router = useRouter()
+const route = useRoute()
 
-// 目前只有首页是真实页面，其余菜单等对应页面做好后再补 path
+// 高亮优先级：外部传的 active > 路由 meta.nav > 首页
+const current = computed(() => props.active || route.meta?.nav || 'home')
+
 const MENUS = [
   { key: 'home', label: '首页', path: '/' },
-  { key: 'series', label: '剧集' },
-  { key: 'case', label: '案卷' },
-  { key: 'rank', label: '悬案榜' },
-  { key: 'about', label: '关于' }
+  { key: 'series', label: '剧集', path: '/series' },
+  { key: 'case', label: '案卷', path: '/cases' },
+  { key: 'rank', label: '悬案榜', path: '/rank' },
+  { key: 'about', label: '关于', path: '/about' }
 ]
 
 function go(item) {
-  if (item.path) {
-    router.push(item.path)
+  if (route.path === item.path) {
+    // 已经在目标页，再点一次就当"回到顶部"
+    document.querySelector('.scroller, .home')?.scrollTo({ top: 0, behavior: 'smooth' })
     return
   }
-  showToast(`「${item.label}」这一卷尚未展开，敬请候令。`)
+  router.push(item.path)
 }
 </script>
 
@@ -221,6 +232,51 @@ function go(item) {
 }
 .who .dot { font-style: normal; font-size: 13px; }
 
+/* 后台入口：冷色描边 + 金属微光，和朱砂色的「验牌入城」分开 */
+.admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 15px;
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: 2px;
+  color: rgba(200, 220, 242, 0.86);
+  background: linear-gradient(160deg, rgba(43, 68, 99, 0.5), rgba(16, 26, 40, 0.62));
+  border: 1px solid rgba(143, 179, 217, 0.34);
+  border-radius: 5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.25s, border-color 0.25s, box-shadow 0.3s, transform 0.2s;
+}
+.admin-btn .glyph {
+  font-style: normal;
+  font-size: 13px;
+  opacity: 0.85;
+  transition: transform 0.5s;
+}
+.admin-btn:hover {
+  color: #eaf2fb;
+  border-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(43, 68, 99, 0.6), 0 0 16px rgba(216, 176, 106, 0.22);
+}
+.admin-btn:hover .glyph { transform: rotate(120deg); }
+/* 扫过一道微光，别太抢戏 */
+.admin-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(216, 232, 250, 0.22), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+.admin-btn:hover::after { left: 130%; }
+
 .ghost-btn,
 .enter-btn {
   padding: 7px 18px;
@@ -259,6 +315,9 @@ function go(item) {
   .brand-text em { display: none; }
   .menu-item { padding: 8px 10px; letter-spacing: 2px; }
   .who { display: none; }
+  /* 窄屏只留齿轮图标，别把导航挤爆 */
+  .admin-btn span { display: none; }
+  .admin-btn { padding: 8px 10px; }
 }
 
 @media (max-width: 560px) {

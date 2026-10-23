@@ -67,6 +67,14 @@ if errorlevel 1 (
 )
 echo.
 
+rem ---------- 数据库自检：库不存在就自动建库 + 导数据 ----------
+rem 这个坑很隐蔽：Hikari 是懒加载，MySQL 里没建 meiying_shenbu 这个库，
+rem 后端照样起得来、探活也能过，等到有人点登录才抛 Unknown database，
+rem 前端只看到一句"服务端开小差了"，非常难查。所以先确认库在不在。
+call :checkDb
+echo.
+
+
 if not defined BACKEND goto skipBackend
 
 rem ===================== ③ 构建 + 启动后端 =====================
@@ -134,6 +142,17 @@ if defined JARFILE (
     echo         构建完成：!JARFILE!
 )
 
+rem ---------- 8080 占用检查 ----------
+rem 8080 已经被占着的话，java 会直接 "Port 8080 was already in use" 退出，
+rem 而下面的等待循环又因为「这个端口有人在听」误报"后端已就绪"，
+rem 前端最后调接口拿到的是别人的响应。所以先看一眼。
+netstat -ano | findstr ":8080 " | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo   [提示] 8080 端口已被占用，跳过后端启动。
+    echo          如果是上次没关干净的实例，请先双击 stop.bat 再重跑本脚本。
+    goto skipBackend
+)
+
 echo   [2/3] 启动后端（新窗口，端口 8080）...
 rem /d 负责设置工作目录（让 log/xx.log 落在后端自己目录下）；
 rem jar 用完整路径，否则相对路径找不到（jar 在 target 子目录里）；
@@ -161,16 +180,32 @@ rem ---------- 探活：确认后端上真有 /api/user 接口 ----------
 rem 启动的不是接口后端时，这里能把"前端登录报未找到"提前讲清楚
 where curl >nul 2>&1
 if errorlevel 1 goto probeDone
+
+rem 两个坑：
+rem   1) --noproxy "*" 必须加。本机若配了 HTTP_PROXY，curl 会把访问 localhost
+rem      的请求也丢给代理，抓回来一个 502，会被误判成"接口正常"。
+rem   2) 不用 for /f 抓 curl 输出。改成先写临时文件再 set /p，避开引号与
+rem      %%{http_code} 在 for 命令行里的转义问题。
+set "CODE_FILE=%TEMP%\myss_httpcode.txt"
+del "%CODE_FILE%" >nul 2>&1
+curl -s -m 5 --noproxy "*" -o nul -w "%%{http_code}" http://127.0.0.1:8080/api/user/me > "%CODE_FILE%" 2>nul
 set "HTTPCODE="
-for /f %%C in ('curl -s -o nul -w "%%{http_code}" http://localhost:8080/api/user/me') do set "HTTPCODE=%%C"
+if exist "%CODE_FILE%" set /p HTTPCODE=<"%CODE_FILE%"
+del "%CODE_FILE%" >nul 2>&1
+if not defined HTTPCODE set "HTTPCODE=000"
+
 if "!HTTPCODE!"=="404" (
     echo         [警告] 8080 上的服务没有 /api/user 接口 ^(HTTP 404^)。
     echo                当前后端不是可用的接口后端，前端调接口会"未找到"。
     echo                请检查 %BACKEND%
+) else if "!HTTPCODE!"=="200" (
+    echo         接口探活：/api/user/me 返回 200，正常。
+) else if "!HTTPCODE!"=="401" (
+    echo         接口探活：/api/user/me 返回 401 ^(未带令牌，属正常^)。
 ) else if "!HTTPCODE!"=="000" (
     echo         [警告] 8080 端口连不上，后端可能启动失败。
 ) else (
-    echo         接口探活：/api/user/me 返回 !HTTPCODE!，正常。
+    echo         [警告] 接口探活返回 !HTTPCODE!，请打开后端窗口看日志。
 )
 :probeDone
 echo.
@@ -193,20 +228,47 @@ if errorlevel 1 (
     echo          请检查 Node.js 是否装好、PATH 是否配置正确。
     goto end
 )
-if not exist "%FRONTEND%\node_modules" (
-    echo         node_modules 已丢失，执行 npm install（首次 1-2 分钟）...
+
+rem ---------------------------------------------------------------
+rem 只判断「node_modules 目录还在不在」是不够的 —— 这正是之前前端窗口
+rem 一闪就没的原因：node_modules 在，但里面的包是空壳（@vitejs/plugin-vue
+rem 只剩一个空文件夹，一个文件都没有），vite 一加载配置就报
+rem Cannot find package '...@vitejs\plugin-vue\index.js'。
+rem 所以点名检查几个必需包，缺一个就重装。
+rem ---------------------------------------------------------------
+set "DEPSOK=1"
+for %%P in (vite vue vue-router "@vitejs\plugin-vue") do (
+    if not exist "%FRONTEND%\node_modules\%%~P\package.json" set "DEPSOK="
+)
+
+if not defined DEPSOK (
+    echo         前端依赖缺失或损坏，执行 npm install ^(首次 1-2 分钟^) ...
     echo.
     pushd "%FRONTEND%"
-    call npm install
+    call npm install --no-audit --no-fund
     set "NPMRC=!ERRORLEVEL!"
     popd
     echo.
     if not "!NPMRC!"=="0" (
         echo   [失败] npm install 失败，请看上面的报错。
+        echo          国内网络建议先换镜像再重试：
+        echo              npm config set registry https://registry.npmmirror.com
         goto end
     )
+
+    rem 装完再验一遍，别让"装了个寂寞"继续往下走
+    set "DEPSOK=1"
+    for %%P in (vite vue vue-router "@vitejs\plugin-vue") do (
+        if not exist "%FRONTEND%\node_modules\%%~P\package.json" set "DEPSOK="
+    )
+    if not defined DEPSOK (
+        echo   [失败] 依赖装完仍然缺包。
+        echo          请手动删掉 %FRONTEND%\node_modules 整个文件夹后重跑本脚本。
+        goto end
+    )
+    echo         依赖安装完成。
 ) else (
-    echo         node_modules 已存在，跳过安装。
+    echo         前端依赖已就绪，跳过安装。
 )
 
 rem 前端必须用 /d 指定工作目录，且 /k 后面不要整体加引号
@@ -226,3 +288,60 @@ echo   ============================================================
 :end
 echo.
 pause
+exit /b 0
+
+rem ---------------- 子过程：确保 meiying_shenbu 库存在 ----------------
+:checkDb
+set "MYSQLCMD="
+where mysql >nul 2>&1
+if not errorlevel 1 set "MYSQLCMD=mysql"
+if not defined MYSQLCMD (
+    for /d %%I in ("C:\Program Files\MySQL\MySQL Server *" "C:\MySQL\MySQL Server *" "D:\Program Files\MySQL\MySQL Server *" "D:\MySQL\MySQL Server *") do (
+        if not defined MYSQLCMD if exist "%%~fI\bin\mysql.exe" set "MYSQLCMD=%%~fI\bin\mysql.exe"
+    )
+)
+if not defined MYSQLCMD (
+    echo     [提示] 没找到 mysql 客户端，跳过数据库自检。
+    exit /b 0
+)
+
+rem 账号密码跟 application.properties 保持一致；库密码改过的话这里也要改，
+rem 千万别把 DBPASS 改成空值 —— mysql -p 后面没密码会转成交互式输入，脚本会卡住。
+set "DBUSER=root"
+set "DBPASS=123456"
+set "DBCHECK=%TEMP%\myss_dbcheck.txt"
+
+rem 注意：这里不用 for /f 抓结果（exe 路径带空格 + SQL 里带引号，转义太容易踩坑），
+rem 统一走「重定向到临时文件 + set /p 读一行」。
+del "%DBCHECK%" >nul 2>&1
+"%MYSQLCMD%" -u%DBUSER% -p%DBPASS% -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='meiying_shenbu'" > "%DBCHECK%" 2>nul
+set "DBFOUND="
+if exist "%DBCHECK%" set /p DBFOUND=<"%DBCHECK%"
+del "%DBCHECK%" >nul 2>&1
+
+if defined DBFOUND (
+    echo     [自检] 数据库 meiying_shenbu 已存在。
+    exit /b 0
+)
+
+echo     [自检] 数据库 meiying_shenbu 不存在，正在创建 ...
+"%MYSQLCMD%" -u%DBUSER% -p%DBPASS% -e "CREATE DATABASE IF NOT EXISTS meiying_shenbu DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;" >nul 2>&1
+if not exist "%~dp0meiying_shenbu.sql" (
+    echo     [提示] 没找到 %~dp0meiying_shenbu.sql，库是空的，登录会查不到用户。
+    exit /b 0
+)
+"%MYSQLCMD%" -u%DBUSER% -p%DBPASS% --default-character-set=utf8mb4 meiying_shenbu < "%~dp0meiying_shenbu.sql" >nul 2>&1
+
+rem 建完再验一遍：账号密码不对时 mysql 只会静默失败，别让它假装成功
+del "%DBCHECK%" >nul 2>&1
+"%MYSQLCMD%" -u%DBUSER% -p%DBPASS% -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='meiying_shenbu'" > "%DBCHECK%" 2>nul
+set "DBFOUND="
+if exist "%DBCHECK%" set /p DBFOUND=<"%DBCHECK%"
+del "%DBCHECK%" >nul 2>&1
+if not defined DBFOUND (
+    echo     [致命] 建库失败 —— 多半是 MySQL 账号密码不对（脚本里写的是 root/123456）。
+    echo            请改 start.bat 里的 DBUSER / DBPASS，或手动导入 meiying_shenbu.sql。
+    exit /b 0
+)
+echo     [自检] 建库并导入 meiying_shenbu.sql 完成。
+exit /b 0

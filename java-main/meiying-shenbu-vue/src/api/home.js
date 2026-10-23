@@ -23,9 +23,17 @@ import {
   CATEGORIES,
   DRAMAS,
   FEATURED,
+  PAGE_SIZE,
   RANKS,
   SCOPES,
-  searchDramas as searchDramasLocal
+  SORTS,
+  YEARS,
+  buildDramaDetail,
+  buildRankList,
+  filterDramas,
+  paginate,
+  searchDramas as searchDramasLocal,
+  sortDramas
 } from '../data/dramas'
 
 /** 首页各数据源对应的后端地址（后端没开也不影响前端编译运行） */
@@ -100,4 +108,48 @@ export async function fetchRank(limit = 5) {
 }
 
 /** 给筛选条 / 搜索范围下拉用，也顺带从这里出，视图层只 import 这一层 */
-export { CATEGORIES, SCOPES }
+export { CATEGORIES, SCOPES, YEARS, SORTS, PAGE_SIZE }
+
+/**
+ * 剧集页列表：筛选 + 排序 + 分页
+ *
+ * 后端就绪后换成：
+ *   GET /api/drama/list?genre=&year=&sort=&keyword=&page=&size=
+ * 返回值结构与现在一致（{ ok, msg, data: { page, totalPages, total, items } }），
+ * 所以 SeriesView 不用改。
+ *
+ * @param {{ genre?: string, year?: string|number, sort?: string,
+ *           keyword?: string, page?: number, size?: number }} opt
+ */
+export async function fetchSeriesList({
+  genre = '全部',
+  year = 'all',
+  sort = 'default',
+  keyword = '',
+  page = 1,
+  size = PAGE_SIZE
+} = {}) {
+  const filtered = filterDramas(DRAMAS, {
+    categories: genre && genre !== '全部' ? [genre] : [],
+    year,
+    keyword
+  })
+  const sorted = sortDramas(filtered, sort)
+  const data = paginate(sorted, page, size)
+  return { ok: true, msg: '', data }
+}
+
+/**
+ * 剧集详情：海报 / 简介 / 演职人员 / 分集 / 相关推荐
+ * 后端就绪后换成 GET /api/drama/:id
+ */
+export async function fetchDramaDetail(id) {
+  const data = buildDramaDetail(id)
+  if (!data) return { ok: false, msg: '未寻得此卷，许是被谁抽走了。', data: null }
+  return { ok: true, msg: '', data }
+}
+
+/** 完整悬案榜；后端就绪后换成 GET /api/drama/rank?limit=10 */
+export async function fetchRankAll(limit = 10) {
+  return { ok: true, msg: '', data: buildRankList(limit) }
+}

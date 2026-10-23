@@ -11,7 +11,7 @@
       </div>
 
       <nav class="foot-links">
-        <a v-for="l in LINKS" :key="l.label" href="javascript:;" @click="emit('nav', l)">{{ l.label }}</a>
+        <router-link v-for="l in LINKS" :key="l.path" :to="l.path">{{ l.label }}</router-link>
       </nav>
 
       <p class="foot-note">
@@ -23,15 +23,13 @@
 </template>
 
 <script setup>
-const emit = defineEmits(['nav'])
-
-// 页脚链接目前只有首页是真实页面，其余交给父级弹提示
+// 页脚导航：全部指向真实页面
 const LINKS = [
   { label: '首页', path: '/' },
   { label: '剧集', path: '/series' },
-  { label: '案卷' },
-  { label: '悬案榜' },
-  { label: '关于' }
+  { label: '案卷', path: '/cases' },
+  { label: '悬案榜', path: '/rank' },
+  { label: '关于', path: '/about' }
 ]
 </script>
 
