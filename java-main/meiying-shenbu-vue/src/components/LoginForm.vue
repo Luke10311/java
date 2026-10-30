@@ -77,9 +77,11 @@ async function onSubmit() {
   }
 
   if (!result.ok) {
+    // 登录失败只高亮令牌框并显示后端返回的真实原因；
+    // 不能顺手把名号框也标错 —— 那里的固定文案是「名号不可为空」，会误导
     pwdMsg.value = result.msg || '名号或令牌有误，魅影惑人，请再核对。'
     errors.pwd = true
-    errors.user = true
+    errors.user = false
     return
   }
 
