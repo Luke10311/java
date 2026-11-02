@@ -74,6 +74,44 @@
         </div>
       </section>
 
+      <!-- ── 魅影奇案：按《魅影神捕》探案世界观排的新案卷 ──-->
+      <section class="block">
+        <div class="sec-head">
+          <h3 class="sec-title">魅影奇案</h3>
+          <span class="sec-line"></span>
+          <span class="sec-sub">六卷未结 · 各配案发写影一帧</span>
+        </div>
+
+        <div class="case-grid">
+          <article
+            v-for="c in CASES"
+            :key="c.id"
+            class="case-card"
+            @click="openCase(c)"
+          >
+            <div class="case-pic">
+              <img
+                :src="c.image"
+                :alt="c.title + ' 案发写影'"
+                loading="lazy"
+                decoding="async"
+              >
+              <span class="case-veil" aria-hidden="true"></span>
+              <span class="case-tag">{{ c.tag }}</span>
+            </div>
+            <div class="case-body">
+              <h4 class="case-title">{{ c.title }}</h4>
+              <p class="case-desc">{{ c.desc }}</p>
+              <div class="case-meta">
+                <span class="m-place">◈ {{ c.place }}</span>
+                <span class="m-status" :class="{ closed: c.status === '已封卷' }">{{ c.status }}</span>
+                <span class="m-reward">{{ c.reward }}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <!-- ── 热播 / 缉查结果 ────────────────────────-->
       <section ref="listRef" class="block">
         <div class="sec-head">
@@ -158,6 +196,7 @@ import SiteFooter from '../components/layout/SiteFooter.vue'
 import SearchBar from '../components/home/SearchBar.vue'
 import DramaCard from '../components/drama/DramaCard.vue'
 import { HOT_WORDS } from '../data/dramas'
+import { CASES } from '../data/cases'
 import {
   CATEGORIES,
   fetchFeatured,
@@ -276,6 +315,11 @@ function clearQuery() {
 // 剧集详情页已就位：点卡片 / 榜单 / 精选都翻到对应卷宗
 function openDrama(drama) {
   router.push(`/drama/${drama.id}`)
+}
+
+/** 奇案卡片：翻到案件卷宗详情页 */
+function openCase(c) {
+  router.push(`/case/${c.id}`)
 }
 
 /** 精选一案是否已收入案卷 */
@@ -599,6 +643,113 @@ function toggleFeaturedCase() {
   background: rgba(216, 176, 106, 0.08);
 }
 
+/* ── 魅影奇案 ───────────────────────────────── */
+.sec-sub {
+  flex-shrink: 0;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(216, 176, 106, 0.55);
+}
+
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+}
+
+.case-card {
+  border: 1px solid rgba(216, 176, 106, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(165deg, rgba(18, 26, 43, 0.72), rgba(9, 12, 20, 0.88));
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.case-card:hover {
+  border-color: rgba(216, 176, 106, 0.5);
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.5), 0 0 26px rgba(216, 176, 106, 0.12);
+  transform: translateY(-3px);
+}
+
+.case-pic {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #0a0e18;
+}
+.case-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.case-card:hover .case-pic img { transform: scale(1.06); }
+.case-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 55%, rgba(9, 12, 20, 0.85) 100%),
+    radial-gradient(90% 70% at 50% 40%, transparent 50%, rgba(9, 12, 20, 0.35) 100%);
+}
+.case-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 10px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #ffe6cf;
+  background: rgba(194, 58, 58, 0.85);
+  border-radius: 3px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.case-body { padding: 16px 18px 18px; }
+.case-title {
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: var(--paper);
+}
+.case-card:hover .case-title { color: var(--gold); }
+.case-desc {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.9;
+  letter-spacing: 1px;
+  color: rgba(232, 226, 212, 0.6);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.case-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 14px;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.case-meta .m-place { color: rgba(143, 179, 217, 0.75); }
+.case-meta .m-status {
+  padding: 1px 8px;
+  border: 1px solid rgba(232, 116, 108, 0.5);
+  border-radius: 3px;
+  color: rgba(232, 116, 108, 0.95);
+}
+.case-meta .m-status.closed {
+  border-color: rgba(143, 179, 217, 0.35);
+  color: rgba(143, 179, 217, 0.7);
+}
+.case-meta .m-reward {
+  margin-left: auto;
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(216, 176, 106, 0.3);
+}
+
 /* ── 分类 chips ─────────────────────────────── */
 .chips {
   display: flex;
@@ -730,6 +881,7 @@ function toggleFeaturedCase() {
   .f-badge { align-self: center; }
   .f-desc { text-align: left; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px 14px; }
+  .case-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {

@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import SeriesView from '../views/SeriesView.vue'
 import DramaDetailView from '../views/DramaDetailView.vue'
+import CaseDetailView from '../views/CaseDetailView.vue'
 import CasesView from '../views/CasesView.vue'
 import RankView from '../views/RankView.vue'
 import AboutView from '../views/AboutView.vue'
@@ -47,6 +48,13 @@ const routes = [
     component: DramaDetailView,
     props: true,
     meta: { title: '魅影神捕 · 卷宗', nav: 'series' }
+  },
+  {
+    path: '/case/:id',
+    name: 'case-detail',
+    component: CaseDetailView,
+    props: true,
+    meta: { title: '魅影神捕 · 案卷', nav: 'home' }
   },
   {
     path: '/cases',
