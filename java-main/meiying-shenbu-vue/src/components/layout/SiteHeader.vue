@@ -74,6 +74,8 @@ const MENUS = [
   { key: 'home', label: '首页', path: '/' },
   { key: 'series', label: '剧集', path: '/series' },
   { key: 'case', label: '案卷', path: '/cases' },
+  { key: 'member', label: '探案会员中心', path: '/member' },
+  { key: 'likes', label: '我的喜欢', path: '/likes' },
   { key: 'rank', label: '悬案榜', path: '/rank' },
   { key: 'about', label: '关于', path: '/about' }
 ]

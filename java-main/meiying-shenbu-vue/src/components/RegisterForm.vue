@@ -3,39 +3,45 @@
   <form class="form active" novalidate @submit.prevent="onSubmit">
     <div class="field" :class="{ error: errors.user }">
       <label>捕快名号</label>
-      <input
-        v-model.trim="user"
-        type="text"
-        placeholder="2-16位用户名"
-        autocomplete="off"
-        @input="errors.user = false; userMsg = ''"
-      >
-      <span class="icon">🏮</span>
+      <div class="input-wrap">
+        <input
+          v-model.trim="user"
+          type="text"
+          placeholder="2-16位用户名"
+          autocomplete="off"
+          @input="errors.user = false; userMsg = ''"
+        >
+        <span class="icon">🏮</span>
+      </div>
       <p class="err-msg" v-if="userMsg">{{ userMsg }}</p>
       <p class="err-msg" v-else>名号须为 2-16 位字符。</p>
     </div>
     <div class="field has-toggle" :class="{ error: errors.pwd }">
       <label>设定令牌</label>
-      <input
-        v-model="pwd"
-        :type="showPwd ? 'text' : 'password'"
-        placeholder="至少6位密码"
-        autocomplete="new-password"
-        @input="errors.pwd = false"
-      >
-      <span class="toggle-eye" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁' }}</span>
+      <div class="input-wrap">
+        <input
+          v-model="pwd"
+          :type="showPwd ? 'text' : 'password'"
+          placeholder="至少6位密码"
+          autocomplete="new-password"
+          @input="errors.pwd = false"
+        >
+        <span class="toggle-eye" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁' }}</span>
+      </div>
       <p class="err-msg">令牌至少需 6 位，慎防魅影窃听。</p>
     </div>
     <div class="field has-toggle" :class="{ error: errors.pwd2 }">
       <label>复核令牌</label>
-      <input
-        v-model="pwd2"
-        :type="showPwd2 ? 'text' : 'password'"
-        placeholder="再次输入密码"
-        autocomplete="new-password"
-        @input="errors.pwd2 = false"
-      >
-      <span class="toggle-eye" @click="showPwd2 = !showPwd2">{{ showPwd2 ? '🙈' : '👁' }}</span>
+      <div class="input-wrap">
+        <input
+          v-model="pwd2"
+          :type="showPwd2 ? 'text' : 'password'"
+          placeholder="再次输入密码"
+          autocomplete="new-password"
+          @input="errors.pwd2 = false"
+        >
+        <span class="toggle-eye" @click="showPwd2 = !showPwd2">{{ showPwd2 ? '🙈' : '👁' }}</span>
+      </div>
       <p class="err-msg">两次令牌不符，请复核。</p>
     </div>
     <button type="submit" class="btn" :disabled="loading">{{ loading ? '正 在 入 籍' : '领 牌 入 籍' }}</button>
@@ -124,6 +130,11 @@ async function onSubmit() {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(216, 176, 106, 0.12), 0 0 16px rgba(216, 176, 106, 0.15) inset;
 }
+/* 输入框容器：图标锚定在这里，而不是整个 field，
+   这样下方出现错误提示时图标不会跟着沉底压住文字 */
+.input-wrap {
+  position: relative;
+}
 .field .icon {
   position: absolute;
   right: 13px;
@@ -148,7 +159,7 @@ async function onSubmit() {
 .toggle-eye {
   position: absolute;
   right: 12px;
-  bottom: 8px;
+  bottom: 10px;
   cursor: pointer;
   font-size: 16px;
   opacity: 0.55;

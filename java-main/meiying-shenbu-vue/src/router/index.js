@@ -5,6 +5,8 @@ import SeriesView from '../views/SeriesView.vue'
 import DramaDetailView from '../views/DramaDetailView.vue'
 import CaseDetailView from '../views/CaseDetailView.vue'
 import CasesView from '../views/CasesView.vue'
+import MemberCenterView from '../views/MemberCenterView.vue'
+import LikesView from '../views/LikesView.vue'
 import RankView from '../views/RankView.vue'
 import AboutView from '../views/AboutView.vue'
 import AdminLoginView from '../views/AdminLoginView.vue'
@@ -57,10 +59,22 @@ const routes = [
     meta: { title: '魅影神捕 · 案卷', nav: 'home' }
   },
   {
+    path: '/member',
+    name: 'member',
+    component: MemberCenterView,
+    meta: { title: '魅影神捕 · 探案会员中心', nav: 'member' }
+  },
+  {
     path: '/cases',
     name: 'cases',
     component: CasesView,
     meta: { title: '魅影神捕 · 我的案卷', nav: 'case' }
+  },
+  {
+    path: '/likes',
+    name: 'likes',
+    component: LikesView,
+    meta: { title: '魅影神捕 · 我的喜欢', nav: 'likes' }
   },
   {
     path: '/rank',

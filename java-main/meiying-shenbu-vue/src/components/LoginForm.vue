@@ -3,26 +3,30 @@
   <form class="form active" novalidate @submit.prevent="onSubmit">
     <div class="field" :class="{ error: errors.user }">
       <label>捕快名号</label>
-      <input
-        v-model.trim="user"
-        type="text"
-        placeholder="请输入用户名"
-        autocomplete="username"
-        @input="errors.user = false; pwdMsg = ''"
-      >
-      <span class="icon">🏮</span>
+      <div class="input-wrap">
+        <input
+          v-model.trim="user"
+          type="text"
+          placeholder="请输入用户名"
+          autocomplete="username"
+          @input="errors.user = false; pwdMsg = ''"
+        >
+        <span class="icon">🏮</span>
+      </div>
       <p class="err-msg">名号不可为空，捕头如何点将？</p>
     </div>
     <div class="field has-toggle" :class="{ error: errors.pwd }">
       <label>通行令牌</label>
-      <input
-        v-model="pwd"
-        :type="showPwd ? 'text' : 'password'"
-        placeholder="请输入密码"
-        autocomplete="current-password"
-        @input="errors.pwd = false; errors.user = false; pwdMsg = ''"
-      >
-      <span class="toggle-eye" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁' }}</span>
+      <div class="input-wrap">
+        <input
+          v-model="pwd"
+          :type="showPwd ? 'text' : 'password'"
+          placeholder="请输入密码"
+          autocomplete="current-password"
+          @input="errors.pwd = false; errors.user = false; pwdMsg = ''"
+        >
+        <span class="toggle-eye" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁' }}</span>
+      </div>
       <p class="err-msg" v-if="pwdMsg">{{ pwdMsg }}</p>
       <p class="err-msg" v-else>令牌不可为空，无凭不得入内。</p>
     </div>
@@ -133,6 +137,11 @@ async function onSubmit() {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(216, 176, 106, 0.12), 0 0 16px rgba(216, 176, 106, 0.15) inset;
 }
+/* 输入框容器：图标锚定在这里，而不是整个 field，
+   这样下方出现错误提示时图标不会跟着沉底压住文字 */
+.input-wrap {
+  position: relative;
+}
 .field .icon {
   position: absolute;
   right: 13px;
@@ -157,7 +166,7 @@ async function onSubmit() {
 .toggle-eye {
   position: absolute;
   right: 12px;
-  bottom: 8px;
+  bottom: 10px;
   cursor: pointer;
   font-size: 16px;
   opacity: 0.55;
