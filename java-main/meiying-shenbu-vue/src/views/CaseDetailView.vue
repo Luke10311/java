@@ -46,6 +46,12 @@
 
           <div class="actions">
             <button class="btn-main" type="button" @click="follow">▶ 认领此案</button>
+            <button
+              class="btn-like"
+              :class="{ on: liked }"
+              type="button"
+              @click="onLike"
+            >{{ liked ? '♥ 已喜欢' : '♡ 喜欢此案' }}</button>
             <button class="btn-ghost" type="button" @click="reportClue">✎ 提供线索</button>
           </div>
         </div>
@@ -119,6 +125,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import PageShell from '../components/common/PageShell.vue'
 import { getCaseById, getOtherCases } from '../data/cases'
+import { isLiked, toggleLike } from '../store/likes'
 import { showToast } from '../store/shell'
 
 const props = defineProps({
@@ -131,6 +138,9 @@ const router = useRouter()
 const picFailed = ref(false)
 
 const detail = computed(() => getCaseById(props.id))
+
+/** 是否已喜欢此案（跟 detail 一起随路由参数刷新） */
+const liked = computed(() => (detail.value ? isLiked(detail.value.id) : false))
 
 watch(
   () => props.id,
@@ -147,6 +157,12 @@ const others = computed(() => getOtherCases(props.id, 3))
 /** 认领此案：办案系统还没接上，先应一声 */
 function follow() {
   showToast(`已登记认领「${detail.value.title}」，缉查文书誊抄中。`)
+}
+
+/** 喜欢此案：收进「我的喜欢」 */
+function onLike() {
+  const added = toggleLike(detail.value.id)
+  showToast(added ? `「${detail.value.title}」已收进喜欢。` : `已移出对「${detail.value.title}」的喜欢。`)
 }
 
 /** 提供线索：线索通道待开 */
@@ -294,6 +310,31 @@ function reportClue() {
   border-color: var(--gold);
   color: var(--gold);
   box-shadow: 0 0 18px rgba(216, 176, 106, 0.22);
+}
+
+/* ── 喜欢按钮：默认金色描边，点亮后转朱砂 ──── */
+.btn-like {
+  padding: 10px 22px;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  border: 1px solid rgba(216, 176, 106, 0.45);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.btn-like:hover {
+  color: #ffe9cf;
+  background: rgba(194, 58, 58, 0.35);
+  border-color: var(--cinnabar);
+  box-shadow: 0 0 18px rgba(194, 58, 58, 0.28);
+}
+.btn-like.on {
+  color: rgba(232, 116, 108, 0.95);
+  border-color: rgba(232, 116, 108, 0.55);
+  background: rgba(194, 58, 58, 0.14);
 }
 
 /* ── 区块通用标题（对齐首页 / 剧集详情页） ──── */

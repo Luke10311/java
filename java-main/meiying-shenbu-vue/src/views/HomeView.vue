@@ -107,6 +107,13 @@
                 <span class="m-status" :class="{ closed: c.status === '已封卷' }">{{ c.status }}</span>
                 <span class="m-reward">{{ c.reward }}</span>
               </div>
+              <button
+                class="case-like"
+                :class="{ on: likedSet.has(c.id) }"
+                type="button"
+                :title="likedSet.has(c.id) ? '移出喜欢' : '收进喜欢'"
+                @click.stop="onLikeCase(c)"
+              >{{ likedSet.has(c.id) ? '♥ 已喜欢' : '♡ 喜欢' }}</button>
             </div>
           </article>
         </div>
@@ -205,6 +212,7 @@ import {
   searchDramas
 } from '../api/home'
 import { isInCases, toggleCase } from '../store/cases'
+import { likeStore, toggleLike } from '../store/likes'
 import { showToast } from '../store/shell'
 
 const router = useRouter()
@@ -320,6 +328,15 @@ function openDrama(drama) {
 /** 奇案卡片：翻到案件卷宗详情页 */
 function openCase(c) {
   router.push(`/case/${c.id}`)
+}
+
+/** 已喜欢的案件 id 集合（跟 likeStore 联动，加入/移出即时刷新） */
+const likedSet = computed(() => new Set(likeStore.ids))
+
+/** 卡片上的喜欢按钮：收进 / 移出「我的喜欢」，不触发卡片跳转 */
+function onLikeCase(c) {
+  const added = toggleLike(c.id)
+  showToast(added ? `「${c.title}」已收进喜欢。` : `已移出对「${c.title}」的喜欢。`)
 }
 
 /** 精选一案是否已收入案卷 */
@@ -748,6 +765,30 @@ function toggleFeaturedCase() {
   margin-left: auto;
   color: var(--gold);
   text-shadow: 0 0 12px rgba(216, 176, 106, 0.3);
+}
+/* 卡片上的喜欢按钮：不点跳转，只收喜欢 */
+.case-like {
+  margin-top: 10px;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  border: 1px solid rgba(216, 176, 106, 0.4);
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.case-like:hover {
+  color: #ffe9cf;
+  background: rgba(194, 58, 58, 0.35);
+  border-color: var(--cinnabar);
+}
+.case-like.on {
+  color: rgba(232, 116, 108, 0.95);
+  border-color: rgba(232, 116, 108, 0.45);
+  background: rgba(194, 58, 58, 0.12);
 }
 
 /* ── 分类 chips ─────────────────────────────── */
