@@ -1,28 +1,24 @@
 /**
  * 后台管理登录态
  *
- * ⚠️ 注意：这里是「演示校验」，不是真正的权限控制。
- * 后端目前只有 /api/user/**（捕快账号），没有管理员这套接口，所以账号密码
- * 暂时写在前端常量里（admin / admin123），只为把后台的路由和页面串起来。
+ * 现在走真实后端：POST /api/admin/login 校验 admin_user 表里的账号，
+ * 返回 JWT，前端存进 sessionStorage（关掉标签页即失效）。
  *
- * 等后端补上 POST /api/admin/login，只需要改 authenticateAdmin() 一个函数，
- * 路由守卫、登录页、控制台都不用动。
- *
- * 令牌放 sessionStorage 而不是 localStorage：关掉标签页就要重新登录，
- * 后台会话不该长期留在浏览器里。
+ * 路由守卫只负责"手输地址别直接进控制台"；真正的权限校验在后端，
+ * 每个 /api/admin/** 请求都会带上 Bearer 令牌，失效时后端返回 400。
  */
+
+import { adminLogin, SESSION_EXPIRED } from '../api/admin'
 
 const TOKEN_KEY = 'myss_admin_token'
 const USER_KEY = 'myss_admin_user'
+const NAME_KEY = 'myss_admin_name'
 
-/** 演示用管理员账号 —— 后端接口就绪后删掉 */
-const DEMO_ADMIN = { username: 'admin', password: 'admin123' }
+/** 内置管理员账号，登录页只作为提示（真实校验在后端） */
+export const demoAdmin = { username: 'admin', password: 'admin123' }
 
-/** 登录页要展示的演示提示（复制一份，别让页面改到常量本体） */
-export const demoAdmin = { ...DEMO_ADMIN }
-
-/** 演示模式的开关，控制台上要据此提示"不是真的鉴权" */
-export const isDemoAuth = true
+/** 已接入后端鉴权，保留这个开关是为了兼容旧页面的提示语 */
+export const isDemoAuth = false
 
 export function getAdminToken() {
   return sessionStorage.getItem(TOKEN_KEY) || ''
@@ -32,57 +28,48 @@ export function getAdminUser() {
   return sessionStorage.getItem(USER_KEY) || ''
 }
 
+export function getAdminRealName() {
+  return sessionStorage.getItem(NAME_KEY) || ''
+}
+
 export function isAdminLoggedIn() {
   return Boolean(getAdminToken())
 }
 
-export function setAdminSession(username, token) {
+export function setAdminSession(username, token, realName = '') {
   sessionStorage.setItem(TOKEN_KEY, token)
   sessionStorage.setItem(USER_KEY, username)
+  if (realName) sessionStorage.setItem(NAME_KEY, realName)
 }
 
 export function clearAdminSession() {
   sessionStorage.removeItem(TOKEN_KEY)
   sessionStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(NAME_KEY)
+}
+
+/** 判断后端返回的失败是否属于"令牌失效" */
+export function isSessionExpired(msg) {
+  return typeof msg === 'string' && msg.includes(SESSION_EXPIRED)
 }
 
 /**
  * 校验管理员账号
  * @param   {string} username
  * @param   {string} password
- * @returns {Promise<{ok: boolean, msg: string, token?: string}>}
+ * @returns {Promise<{ok: boolean, msg: string, token?: string, username?: string, realName?: string}>}
  */
 export async function authenticateAdmin(username, password) {
-  /* ---------- 后端接口就绪后，把下面这段取消注释、删掉演示校验 ----------
-  let res
-  try {
-    res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    })
-  } catch {
-    return { ok: false, msg: '连不上后端服务，请确认 8080 端口已启动。' }
-  }
+  const res = await adminLogin(username, password)
   if (!res.ok) {
-    return {
-      ok: false,
-      msg: res.status === 404
-        ? '后端还没有 /api/admin/login 接口（404）。'
-        : `请求失败（HTTP ${res.status}）。`
-    }
+    return { ok: false, msg: res.msg || '管理员账号或通行密钥有误。' }
   }
-  const json = await res.json().catch(() => null)
-  if (!json) return { ok: false, msg: '后端返回内容无法解析。' }
-  if (json.code !== 200) return { ok: false, msg: json.msg || '账号或密钥有误。' }
-  return { ok: true, msg: json.msg || '', token: (json.data && json.data.token) || '' }
-  ------------------------------------------------------------------- */
-
-  // 演示校验：稍等一下，免得按钮闪得太快像是没反应
-  await new Promise((resolve) => setTimeout(resolve, 280))
-
-  if (username === DEMO_ADMIN.username && password === DEMO_ADMIN.password) {
-    return { ok: true, msg: '中枢已解锁', token: `demo-admin-${Date.now()}` }
+  const data = res.data || {}
+  return {
+    ok: true,
+    msg: res.msg || '',
+    token: data.token || '',
+    username: data.username || username,
+    realName: data.realName || ''
   }
-  return { ok: false, msg: '管理员账号或通行密钥有误。' }
 }

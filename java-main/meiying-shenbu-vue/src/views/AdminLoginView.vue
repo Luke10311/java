@@ -45,15 +45,15 @@
         </button>
       </form>
 
-      <!-- 演示账号：点一下自动填入，省得手敲 -->
+      <!-- 内置账号：点一下自动填入，省得手敲 -->
       <div class="demo">
-        <span class="demo-label">演示账号</span>
+        <span class="demo-label">内置账号</span>
         <a class="demo-val" href="javascript:;" title="点一下自动填入" @click="fillDemo">
           {{ demoAdmin.username }} / {{ demoAdmin.password }}
         </a>
       </div>
 
-      <p class="notice">当前为前端演示校验，正式环境请接后端 <code>/api/admin/login</code>。</p>
+      <p class="notice">账号校验走后端 <code>/api/admin/login</code>，口令存于 <code>admin_user</code> 表。</p>
 
       <p class="foot">内部系统<span class="divider">·</span>各级捕头凭令登录<span class="divider">·</span>© 魅影神捕探案录</p>
     </div>
@@ -111,8 +111,8 @@ async function onSubmit() {
     return
   }
 
-  setAdminSession(user.value, result.token)
-  showToast(`中枢已解锁，「${user.value}」大人请入。`)
+  setAdminSession(result.username || user.value, result.token, result.realName)
+  showToast(`中枢已解锁，「${result.realName || user.value}」大人请入。`)
 
   // 从 /admin 被踢回登录页的，登录后原路返回；只认 /admin 开头的站内地址
   const raw = route.query.redirect

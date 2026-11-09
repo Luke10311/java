@@ -1,0 +1,66 @@
+-- MySQL dump 10.13  Distrib 8.0.39, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: meiying_shenbu
+-- ------------------------------------------------------
+-- Server version	8.0.39
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Current Database: `meiying_shenbu`
+--
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `meiying_shenbu` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+USE `meiying_shenbu`;
+
+--
+-- Table structure for table `user`
+--
+
+DROP TABLE IF EXISTS `user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '捕快名号（2-16位）',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '加盐 SHA-256 散列值',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入籍时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_username` (`username`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='魅影神捕用户表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user`
+--
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'shenbu_test','017f876ef734b1cbcf859c76ff4b902bd8df74154715339b6ade2f051308f868','2026-10-14 08:47:04'),(2,'test_user1','017f876ef734b1cbcf859c76ff4b902bd8df74154715339b6ade2f051308f868','2026-10-12 10:57:15'),(3,'青阳神捕','6ba05b0ccd4fd6ca2a75b57e9e9f8cdd03155743eb73bb8cfb26a26ce695b61e','2026-10-12 11:10:07'),(4,'铁捕','6ba05b0ccd4fd6ca2a75b57e9e9f8cdd03155743eb73bb8cfb26a26ce695b61e','2026-10-12 11:10:25'),(5,'222','6ba05b0ccd4fd6ca2a75b57e9e9f8cdd03155743eb73bb8cfb26a26ce695b61e','2026-10-12 11:10:34'),(6,'verify_113999','6de6de1f8a9e68de00a7a0aeea406c77adda842e6a8b9dad118735950a2f4c0f','2026-10-12 11:18:34'),(7,'itest_145190','6de6de1f8a9e68de00a7a0aeea406c77adda842e6a8b9dad118735950a2f4c0f','2026-10-12 11:19:05'),(10,'5555','a6e8402bcc56c45f77ebe88d72691a5fd7d1d1e5e767c8162c567b101d4193f7','2026-11-09 10:40:38');
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'meiying_shenbu'
+--
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-11-09 10:48:01
