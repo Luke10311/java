@@ -6,9 +6,9 @@
 --    site_config 站点配置表（系统设置）
 --    其余表（drama / admin_user / user）已由 home_admin_init.sql、init.sql 建好
 --
---  数据库：MySQL 8.x（192.168.68.27:3306）账号：root / 123456
+--  数据库：MySQL 8.x（192.168.68.58:3306）账号：root / 123456
 --  执行：Navicat 里打开本文件整体运行，或
---        mysql -h192.168.68.27 -uroot -p123456 < admin_module_init.sql
+--        mysql -h192.168.68.58 -uroot -p123456 < admin_module_init.sql
 --  可重复执行：CREATE TABLE IF NOT EXISTS / INSERT IGNORE
 -- ============================================================
 

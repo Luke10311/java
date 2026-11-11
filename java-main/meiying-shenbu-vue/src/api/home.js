@@ -6,7 +6,7 @@
  * 保证页面不会白屏。
  *
  *   GET /api/drama/featured                        → 精选一案
- *   GET /api/drama/hot?category=<分类>&limit=8      → 首页热播
+ *   GET /api/drama/hot?category=<分类>&limit=9      → 首页热播
  *   GET /api/drama/rank?limit=5                     → 悬案榜
  *   GET /api/drama/list?genre=&year=&sort=&page=&size= → 剧集页列表
  *   GET /api/drama/:id                              → 详情（详情页仍用本地拼装演职人员/分集）
@@ -74,7 +74,7 @@ export async function fetchFeatured() {
 export async function fetchHot(category = '全部') {
   const res = await getJson(HOME_ENDPOINTS.hot, {
     category: category === '全部' ? '' : category,
-    limit: 8
+    limit: 9
   })
   if (res.ok && Array.isArray(res.data) && res.data.length) {
     return { ok: true, msg: '', data: res.data }

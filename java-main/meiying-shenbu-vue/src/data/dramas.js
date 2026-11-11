@@ -69,7 +69,7 @@ export const FEATURED = {
 
 /**
  * 全量剧集
- * hot: true 的 8 部用于首页「热播探案」；views 用于热度排序。
+ * hot: true 的剧集用于首页「热播探案」；views 用于热度排序。
  */
 export const DRAMAS = [
   { id: 1, title: '长安夜行录', year: 2026, genres: ['悬疑', '古装'], score: 9.2, views: 98400, episodes: 36, badge: '独播', hot: true,  poster: '/images/poster-1.jpg', hueShift: 0,   hue: 212 },
@@ -91,10 +91,13 @@ export const DRAMAS = [
   { id: 15, title: '断刃',       year: 2025, genres: ['武侠'],         score: 7.8, views: 33400, episodes: 24, badge: '',     hot: false, poster: '/images/poster-8.jpg', hueShift: 25,  hue: 356 },
   { id: 16, title: '洛阳春',     year: 2024, genres: ['古装', '权谋'], score: 7.7, views: 29500, episodes: 42, badge: '',     hot: false, poster: '/images/poster-7.jpg', hueShift: -15, hue: 36 },
   { id: 17, title: '逆旅',       year: 2025, genres: ['奇幻', '权谋'], score: 7.6, views: 26700, episodes: 22, badge: '',     hot: false, poster: '/images/poster-3.jpg', hueShift: -35, hue: 274 },
-  { id: 18, title: '白骨谣',     year: 2023, genres: ['悬疑', '奇幻'], score: 7.5, views: 24300, episodes: 16, badge: '',     hot: false, poster: '/images/poster-6.jpg', hueShift: 160, hue: 150 }
+  { id: 18, title: '白骨谣',     year: 2023, genres: ['悬疑', '奇幻'], score: 7.5, views: 24300, episodes: 16, badge: '',     hot: false, poster: '/images/poster-6.jpg', hueShift: 160, hue: 150 },
+
+  // ── 2026-11 新增：专属海报 + 后端简介 ──
+  { id: 19, title: '飞升得道·伪仙案', year: 2026, genres: ['悬疑', '奇幻'], score: 8.6, views: 66800, episodes: 24, badge: '新案', hot: true, poster: '/images/poster-19.webp', hueShift: 0, hue: 268 }
 ]
 
-/** 首页「热播探案」用的 8 部 */
+/** 首页「热播探案」用的剧集 */
 export const HOT_DRAMAS = DRAMAS.filter((d) => d.hot)
 
 /** 悬案榜 */

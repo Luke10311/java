@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS `admin_user` (
 INSERT IGNORE INTO `admin_user` (`username`, `password`, `real_name`) VALUES
   ('admin', SHA2(CONCAT('myss::shenbu::2026', 'admin123'), 256), '中枢主事');
 
--- 1.1 全量剧集（18 部，与 src/data/dramas.js 的 DRAMAS 一一对应）
+-- 1.1 全量剧集（19 部，与 src/data/dramas.js 的 DRAMAS 一一对应）
 INSERT IGNORE INTO `drama`
   (`id`, `title`, `year`, `genres`, `score`, `views`, `episodes`, `badge`, `is_hot`, `poster`, `hue_shift`, `hue`) VALUES
   (1,  '长安夜行录', 2026, '悬疑,古装', 9.2, 98400, 36, '独播', 1, '/images/poster-1.jpg',    0, 212),
@@ -149,7 +149,8 @@ INSERT IGNORE INTO `drama`
   (15, '断刃',       2025, '武侠',      7.8, 33400, 24, '',     0, '/images/poster-8.jpg',   25, 356),
   (16, '洛阳春',     2024, '古装,权谋', 7.7, 29500, 42, '',     0, '/images/poster-7.jpg',  -15, 36),
   (17, '逆旅',       2025, '奇幻,权谋', 7.6, 26700, 22, '',     0, '/images/poster-3.jpg',  -35, 274),
-  (18, '白骨谣',     2023, '悬疑,奇幻', 7.5, 24300, 16, '',     0, '/images/poster-6.jpg',  160, 150);
+  (18, '白骨谣',     2023, '悬疑,奇幻', 7.5, 24300, 16, '',     0, '/images/poster-6.jpg',  160, 150),
+  (19, '飞升得道·伪仙案', 2026, '悬疑,奇幻', 8.6, 66800, 24, '新案', 1, '/images/poster-19.webp', 0, 268);
 
 -- 2.1 精选一案（与 FEATURED 常量一致）
 INSERT IGNORE INTO `home_featured`
