@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 11/11/2026 09:51:14
+ Date: 16/11/2026 11:49:22
 */
 
 SET NAMES utf8mb4;
@@ -30,12 +30,12 @@ CREATE TABLE `admin_user`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_admin_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '后台管理员表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '后台管理员表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of admin_user
 -- ----------------------------
-INSERT INTO `admin_user` VALUES (1, 'admin', 'bce9a1436b93252c385cfc1906f1ef656f6ceb9e95a17d1e39f001bb662d92d9', '中枢主事', '2026-11-11 09:15:01', '2026-11-11 09:10:48');
+INSERT INTO `admin_user` VALUES (1, 'admin', 'bce9a1436b93252c385cfc1906f1ef656f6ceb9e95a17d1e39f001bb662d92d9', '中枢主事', '2026-11-16 11:39:23', '2026-11-11 09:10:48');
 
 -- ----------------------------
 -- Table structure for case_file
@@ -57,7 +57,7 @@ CREATE TABLE `case_file`  (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 110 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '案卷表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 110 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '案卷表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of case_file
@@ -97,7 +97,7 @@ CREATE TABLE `drama`  (
   INDEX `idx_hot`(`is_hot` ASC) USING BTREE,
   INDEX `idx_year`(`year` ASC) USING BTREE,
   INDEX `idx_views`(`views` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '剧集表（首页图片与文字内容）' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '剧集表（首页图片与文字内容）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of drama
@@ -138,7 +138,7 @@ CREATE TABLE `home_banner`  (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_image_key`(`image_key` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '首页横幅图片资源' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '首页横幅图片资源' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of home_banner
@@ -165,7 +165,7 @@ CREATE TABLE `home_featured`  (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_drama`(`drama_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '首页精选一案（主视觉图+文字）' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '首页精选一案（主视觉图+文字）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of home_featured
@@ -186,7 +186,7 @@ CREATE TABLE `home_rank`  (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_drama`(`drama_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '首页悬案榜' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '首页悬案榜' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of home_rank
@@ -208,7 +208,7 @@ CREATE TABLE `site_config`  (
   `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '说明',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`config_key`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '站点配置表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '站点配置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of site_config
@@ -218,6 +218,52 @@ INSERT INTO `site_config` VALUES ('maintenance', '0', '维护模式', '1 开启�
 INSERT INTO `site_config` VALUES ('site_name', '魅影神捕', '站点名称', '显示在浏览器标题与页头', '2026-11-11 09:10:58');
 INSERT INTO `site_config` VALUES ('site_notice', '本季新案已上卷，灯市无头尸一案敬请追查。', '全站公告', '前台顶部公告文字，留空则不显示', '2026-11-11 09:10:58');
 INSERT INTO `site_config` VALUES ('site_subtitle', '探案录 · 悬疑剧集', '站点副标题', '页头站名下方的小字', '2026-11-11 09:10:58');
+
+-- ----------------------------
+-- Table structure for team_member
+-- ----------------------------
+DROP TABLE IF EXISTS `team_member`;
+CREATE TABLE `team_member`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '所属房间号',
+  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '成员名号',
+  `joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_room_user`(`room_code` ASC, `username` ASC) USING BTREE,
+  INDEX `idx_room`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '组队房间成员' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_member
+-- ----------------------------
+INSERT INTO `team_member` VALUES (1, 'AFFHJK', 'shenbu_test', '2026-11-16 11:46:01');
+INSERT INTO `team_member` VALUES (3, 'BJ893Z', 'shenbu_test', '2026-11-16 11:46:36');
+INSERT INTO `team_member` VALUES (4, 'KJ2RAU', '黎斯', '2026-11-16 11:47:22');
+INSERT INTO `team_member` VALUES (5, 'P7Z3ZG', '黎斯', '2026-11-16 11:48:35');
+
+-- ----------------------------
+-- Table structure for team_room
+-- ----------------------------
+DROP TABLE IF EXISTS `team_room`;
+CREATE TABLE `team_room`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '6位房牌号',
+  `drama_id` bigint NOT NULL COMMENT '一起探的卷宗id',
+  `drama_title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '' COMMENT '卷宗标题冗余',
+  `host_name` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '房主名号',
+  `status` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'waiting' COMMENT 'waiting/started/closed',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '建房时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `room_code`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '组队探案房间' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_room
+-- ----------------------------
+INSERT INTO `team_room` VALUES (1, 'AFFHJK', 1, '长安夜行录', 'shenbu_test', 'closed', '2026-11-16 11:46:01');
+INSERT INTO `team_room` VALUES (2, 'BJ893Z', 1, '长安夜行录', 'shenbu_test', 'waiting', '2026-11-16 11:46:36');
+INSERT INTO `team_room` VALUES (3, 'KJ2RAU', 1, '长安夜行录', '黎斯', 'closed', '2026-11-16 11:47:22');
+INSERT INTO `team_room` VALUES (4, 'P7Z3ZG', 3, '千面魅影', '黎斯', 'started', '2026-11-16 11:48:35');
 
 -- ----------------------------
 -- Table structure for user
@@ -230,7 +276,7 @@ CREATE TABLE `user`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入籍时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魅影神捕用户表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魅影神捕用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user
@@ -244,5 +290,8 @@ INSERT INTO `user` VALUES (6, 'verify_113999', '6de6de1f8a9e68de00a7a0aeea406c77
 INSERT INTO `user` VALUES (7, 'itest_145190', '6de6de1f8a9e68de00a7a0aeea406c77adda842e6a8b9dad118735950a2f4c0f', '2026-10-12 11:19:05');
 INSERT INTO `user` VALUES (10, '5555', 'a6e8402bcc56c45f77ebe88d72691a5fd7d1d1e5e767c8162c567b101d4193f7', '2026-11-09 10:40:38');
 INSERT INTO `user` VALUES (12, '6666', '82b4ef68acb946aee9bce2193095e83c47b29046101a7629069d1f1907e23ad5', '2026-11-11 09:06:47');
+INSERT INTO `user` VALUES (13, '7777', '04421506adb1a627fd1a06adb67acc53323dbe73376a03ae8a585b84e8d5e8c7', '2026-11-16 10:54:55');
+INSERT INTO `user` VALUES (14, '黎斯', '77e0d706018d102a57fcbc840647a182ab685e5bd368d586edacb8b0e6fd7b7b', '2026-11-16 10:56:20');
+INSERT INTO `user` VALUES (15, 'zk_verify_01', '9502e2520fb3f8c6780026fc7071875b9b2f4c1b8d232cacb1e2a56588ec1058', '2026-11-16 10:56:23');
 
 SET FOREIGN_KEY_CHECKS = 1;

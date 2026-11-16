@@ -5,6 +5,8 @@ import SeriesView from '../views/SeriesView.vue'
 import DramaDetailView from '../views/DramaDetailView.vue'
 import CaseDetailView from '../views/CaseDetailView.vue'
 import CasesView from '../views/CasesView.vue'
+import TeamView from '../views/TeamView.vue'
+import TeamRoomView from '../views/TeamRoomView.vue'
 import MemberCenterView from '../views/MemberCenterView.vue'
 import LikesView from '../views/LikesView.vue'
 import RankView from '../views/RankView.vue'
@@ -69,6 +71,19 @@ const routes = [
     name: 'cases',
     component: CasesView,
     meta: { title: '魅影神捕 · 我的案卷', nav: 'case' }
+  },
+  {
+    path: '/team',
+    name: 'team',
+    component: TeamView,
+    meta: { title: '魅影神捕 · 组队探案', nav: 'team' }
+  },
+  {
+    path: '/team/:code',
+    name: 'team-room',
+    component: TeamRoomView,
+    props: true,
+    meta: { title: '魅影神捕 · 组队房间', nav: 'team' }
   },
   {
     path: '/likes',

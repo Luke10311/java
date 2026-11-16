@@ -20,6 +20,21 @@
     </div>
 
     <template v-else>
+      <!-- ── 组队探案横幅：带 ?team=房牌 进来时显示同行神捕 ──-->
+      <section v-if="teamRoom" class="team-ribbon">
+        <i class="tr-lamp">🏮</i>
+        <span class="tr-text">
+          组队探案中 · 房牌 <b class="tr-code">{{ teamRoom.roomCode }}</b>
+          · 同行 {{ teamRoom.members.length }} 人
+          <span class="tr-names">
+            <template v-for="(m, i) in teamRoom.members" :key="m.username">
+              <b :class="{ me: m.username === shell.user }">{{ m.username }}</b><span v-if="i < teamRoom.members.length - 1" class="sep">、</span>
+            </template>
+          </span>
+        </span>
+        <a class="tr-back" href="javascript:;" @click="router.push(`/team/${teamRoom.roomCode}`)">回房间 ›</a>
+      </section>
+
       <!-- ── 卷首：海报 + 提要 ───────────────────-->
       <section class="hero">
         <div class="poster" :style="posterFallback">
@@ -130,13 +145,14 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PageShell from '../components/common/PageShell.vue'
 import DramaCard from '../components/drama/DramaCard.vue'
 import { fetchDramaDetail } from '../api/home'
+import { fetchTeamRoom } from '../api/team'
 import { isInCases, toggleCase } from '../store/cases'
-import { showToast } from '../store/shell'
+import { shell, showToast } from '../store/shell'
 
 const props = defineProps({
   /** 路由参数 /drama/:id */
@@ -144,6 +160,7 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
 
 const detail = ref(null)
 const errMsg = ref('')
@@ -158,6 +175,38 @@ const epRef = ref(null)
 
 /** 收藏状态直接读 store，toggle 后自动重算 */
 const inCases = computed(() => (detail.value ? isInCases(detail.value.id) : false))
+
+// ---------------- 组队探案横幅 ----------------
+// URL 带 ?team=房牌 时，2.5 秒轮询房间信息，把同行神捕亮出来。
+const teamRoom = ref(null)
+let teamTimer = null
+
+async function pollTeam() {
+  const code = String(route.query.team || '').toUpperCase()
+  if (!code) {
+    teamRoom.value = null
+    return
+  }
+  const res = await fetchTeamRoom(code)
+  // 房间散伙了就收掉横幅，别打扰单人阅读
+  teamRoom.value = res.ok && res.data && res.data.status !== 'closed' ? res.data : null
+}
+
+watch(
+  () => route.query.team,
+  (code) => {
+    clearInterval(teamTimer)
+    if (code) {
+      pollTeam()
+      teamTimer = setInterval(pollTeam, 2500)
+    } else {
+      teamRoom.value = null
+    }
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => clearInterval(teamTimer))
 
 watch(
   () => props.id,
@@ -471,4 +520,43 @@ function goDrama(d) {
   .d-title { font-size: 25px; letter-spacing: 5px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px 14px; }
 }
+
+/* ── 组队探案横幅 ─────────────────────────────*/
+.team-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 12px 20px;
+  border: 1px solid rgba(224, 122, 60, 0.45);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(224, 122, 60, 0.12) 0%, rgba(9, 12, 20, 0.5) 60%);
+  animation: ribbonGlow 3s ease-in-out infinite;
+}
+@keyframes ribbonGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 150, 70, 0.12); }
+  50%      { box-shadow: 0 0 20px rgba(255, 150, 70, 0.3); }
+}
+.tr-lamp { font-style: normal; font-size: 18px; }
+.tr-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: rgba(232, 226, 212, 0.8);
+}
+.tr-code { color: var(--gold); font-weight: 400; letter-spacing: 3px; }
+.tr-names { color: rgba(232, 226, 212, 0.6); }
+.tr-names b { color: #ffb27a; font-weight: 400; }
+.tr-names b.me { color: var(--gold); }
+.tr-names .sep { color: rgba(232, 226, 212, 0.35); }
+.tr-back {
+  flex: none;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(143, 179, 217, 0.8);
+  transition: color 0.25s;
+}
+.tr-back:hover { color: var(--gold); }
 </style>
