@@ -189,7 +189,14 @@ async function pollTeam() {
   }
   const res = await fetchTeamRoom(code)
   // 房间散伙了就收掉横幅，别打扰单人阅读
-  teamRoom.value = res.ok && res.data && res.data.status !== 'closed' ? res.data : null
+  if (res.ok && res.data && res.data.room) {
+    teamRoom.value = {
+      roomCode: res.data.room.roomCode,
+      members: res.data.members || []
+    }
+  } else {
+    teamRoom.value = null
+  }
 }
 
 watch(

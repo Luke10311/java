@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 16/11/2026 11:49:22
+ Date: 18/11/2026 09:34:14
 */
 
 SET NAMES utf8mb4;
@@ -220,26 +220,45 @@ INSERT INTO `site_config` VALUES ('site_notice', '本季新案已上卷，灯市
 INSERT INTO `site_config` VALUES ('site_subtitle', '探案录 · 悬疑剧集', '站点副标题', '页头站名下方的小字', '2026-11-11 09:10:58');
 
 -- ----------------------------
+-- Table structure for team_answer
+-- ----------------------------
+DROP TABLE IF EXISTS `team_answer`;
+CREATE TABLE `team_answer`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
+  `round` int NOT NULL COMMENT '轮次',
+  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '捕快名号',
+  `answers_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '作答 JSON：{题号:选项下标}',
+  `correct` int NOT NULL DEFAULT 0 COMMENT '答对题数',
+  `total` int NOT NULL DEFAULT 0 COMMENT '总题数',
+  `score` int NOT NULL DEFAULT 0 COMMENT '本轮得分',
+  `used_sec` int NOT NULL DEFAULT 0 COMMENT '用时（秒）',
+  `submitted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_room_round_user`(`room_code` ASC, `round` ASC, `username` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-作答表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_answer
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for team_member
 -- ----------------------------
 DROP TABLE IF EXISTS `team_member`;
 CREATE TABLE `team_member`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '所属房间号',
-  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '成员名号',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
+  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '捕快名号',
+  `score` int NOT NULL DEFAULT 0 COMMENT '累计积分',
   `joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_room_user`(`room_code` ASC, `username` ASC) USING BTREE,
-  INDEX `idx_room`(`room_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '组队房间成员' ROW_FORMAT = Dynamic;
+  UNIQUE INDEX `uk_room_user`(`room_code` ASC, `username` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-成员表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of team_member
 -- ----------------------------
-INSERT INTO `team_member` VALUES (1, 'AFFHJK', 'shenbu_test', '2026-11-16 11:46:01');
-INSERT INTO `team_member` VALUES (3, 'BJ893Z', 'shenbu_test', '2026-11-16 11:46:36');
-INSERT INTO `team_member` VALUES (4, 'KJ2RAU', '黎斯', '2026-11-16 11:47:22');
-INSERT INTO `team_member` VALUES (5, 'P7Z3ZG', '黎斯', '2026-11-16 11:48:35');
 
 -- ----------------------------
 -- Table structure for team_room
@@ -247,23 +266,22 @@ INSERT INTO `team_member` VALUES (5, 'P7Z3ZG', '黎斯', '2026-11-16 11:48:35');
 DROP TABLE IF EXISTS `team_room`;
 CREATE TABLE `team_room`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '6位房牌号',
-  `drama_id` bigint NOT NULL COMMENT '一起探的卷宗id',
-  `drama_title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '' COMMENT '卷宗标题冗余',
-  `host_name` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '房主名号',
-  `status` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'waiting' COMMENT 'waiting/started/closed',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '建房时间',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌（6位大写字母数字，唯一）',
+  `case_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '当前案件ID（题库key）',
+  `case_title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '当前案件标题（冗余便于展示）',
+  `owner` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房主（捕快名号）',
+  `status` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'waiting' COMMENT '状态：waiting待开案 / playing答题中 / revealed已揭晓',
+  `round` int NOT NULL DEFAULT 0 COMMENT '已开案轮次',
+  `max_members` int NOT NULL DEFAULT 8 COMMENT '人数上限',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `room_code`(`room_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '组队探案房间' ROW_FORMAT = Dynamic;
+  UNIQUE INDEX `uk_room_code`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-房间表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of team_room
 -- ----------------------------
-INSERT INTO `team_room` VALUES (1, 'AFFHJK', 1, '长安夜行录', 'shenbu_test', 'closed', '2026-11-16 11:46:01');
-INSERT INTO `team_room` VALUES (2, 'BJ893Z', 1, '长安夜行录', 'shenbu_test', 'waiting', '2026-11-16 11:46:36');
-INSERT INTO `team_room` VALUES (3, 'KJ2RAU', 1, '长安夜行录', '黎斯', 'closed', '2026-11-16 11:47:22');
-INSERT INTO `team_room` VALUES (4, 'P7Z3ZG', 3, '千面魅影', '黎斯', 'started', '2026-11-16 11:48:35');
 
 -- ----------------------------
 -- Table structure for user
@@ -276,7 +294,7 @@ CREATE TABLE `user`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入籍时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魅影神捕用户表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魅影神捕用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user
@@ -293,5 +311,6 @@ INSERT INTO `user` VALUES (12, '6666', '82b4ef68acb946aee9bce2193095e83c47b29046
 INSERT INTO `user` VALUES (13, '7777', '04421506adb1a627fd1a06adb67acc53323dbe73376a03ae8a585b84e8d5e8c7', '2026-11-16 10:54:55');
 INSERT INTO `user` VALUES (14, '黎斯', '77e0d706018d102a57fcbc840647a182ab685e5bd368d586edacb8b0e6fd7b7b', '2026-11-16 10:56:20');
 INSERT INTO `user` VALUES (15, 'zk_verify_01', '9502e2520fb3f8c6780026fc7071875b9b2f4c1b8d232cacb1e2a56588ec1058', '2026-11-16 10:56:23');
+INSERT INTO `user` VALUES (16, '9999', 'bd4a5d3f1236d9dabc31584d9c1662a1f4c06ddf29fa29cfc5db5b5a7f9d3949', '2026-11-18 08:46:01');
 
 SET FOREIGN_KEY_CHECKS = 1;
