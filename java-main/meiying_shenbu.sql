@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 18/11/2026 09:34:14
+ Date: 20/11/2026 16:36:54
 */
 
 SET NAMES utf8mb4;
@@ -226,20 +226,58 @@ DROP TABLE IF EXISTS `team_answer`;
 CREATE TABLE `team_answer`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
-  `round` int NOT NULL COMMENT '轮次',
   `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '捕快名号',
-  `answers_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '作答 JSON：{题号:选项下标}',
-  `correct` int NOT NULL DEFAULT 0 COMMENT '答对题数',
-  `total` int NOT NULL DEFAULT 0 COMMENT '总题数',
-  `score` int NOT NULL DEFAULT 0 COMMENT '本轮得分',
-  `used_sec` int NOT NULL DEFAULT 0 COMMENT '用时（秒）',
-  `submitted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  `q_index` int NOT NULL COMMENT '题号(0起)',
+  `option_idx` int NOT NULL DEFAULT -1 COMMENT '所选选项下标',
+  `is_correct` tinyint NOT NULL DEFAULT 0 COMMENT '是否正确',
+  `scored` tinyint NOT NULL DEFAULT 0 COMMENT '是否已计分(防重复刷分)',
+  `points` int NOT NULL DEFAULT 0 COMMENT '得分',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最近作答时间',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_room_round_user`(`room_code` ASC, `round` ASC, `username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-作答表' ROW_FORMAT = Dynamic;
+  UNIQUE INDEX `uk_room_user_q`(`room_code` ASC, `username` ASC, `q_index` ASC) USING BTREE,
+  INDEX `fk_answer_room`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-推理作答表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of team_answer
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for team_clue_found
+-- ----------------------------
+DROP TABLE IF EXISTS `team_clue_found`;
+CREATE TABLE `team_clue_found`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
+  `clue_key` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '线索点标识(c1~c9)',
+  `found_by` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '首个找到的捕快',
+  `points` int NOT NULL DEFAULT 0 COMMENT '得分',
+  `found_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '找到时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_room_clue`(`room_code` ASC, `clue_key` ASC) USING BTREE,
+  INDEX `fk_found_room`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-线索发现表(全队共享,首得者得分)' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_clue_found
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for team_game_log
+-- ----------------------------
+DROP TABLE IF EXISTS `team_game_log`;
+CREATE TABLE `team_game_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
+  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '行为人名号',
+  `log_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '日志内容',
+  `ts` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发生时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `fk_log_room`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-探案日志表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_game_log
 -- ----------------------------
 
 -- ----------------------------
@@ -250,15 +288,191 @@ CREATE TABLE `team_member`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
   `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '捕快名号',
-  `score` int NOT NULL DEFAULT 0 COMMENT '累计积分',
+  `score` int NOT NULL DEFAULT 0 COMMENT '本局积分',
   `joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_room_user`(`room_code` ASC, `username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-成员表' ROW_FORMAT = Dynamic;
+  UNIQUE INDEX `uk_room_user`(`room_code` ASC, `username` ASC) USING BTREE,
+  INDEX `fk_member_room`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-成员表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of team_member
 -- ----------------------------
+
+-- ----------------------------
+-- Table structure for team_quest
+-- ----------------------------
+DROP TABLE IF EXISTS `team_quest`;
+CREATE TABLE `team_quest`  (
+  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '剧本ID，与前端 quest.id 一致',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '展示顺序',
+  `case_no` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '卷号（甲字第〇二六卷）',
+  `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '案名',
+  `subtitle` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '副标题',
+  `place` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '案发地',
+  `icon` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '案卷图标(emoji)',
+  `accent` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '主题色(#d94a42)',
+  `difficulty` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '难度星级',
+  `duration` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '预计时长',
+  `brief` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '案情简介',
+  `culprit` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '真凶(suspect id)',
+  `reveal` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '真相揭晓文案',
+  `scene_count` int NOT NULL DEFAULT 0 COMMENT '勘查场景数',
+  `question_count` int NOT NULL DEFAULT 0 COMMENT '推理题数',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-剧本主表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_quest
+-- ----------------------------
+INSERT INTO `team_quest` VALUES ('q101', 3, '甲字第〇二九卷', '孩童失踪案', '青石镇 · 长街', '青石镇 · 长街', '🧸', '#2b7a6b', '★☆☆', '约 4 分钟', '三日之内，镇上七名孩童接连消失。长街尽头只余一只布老虎、半截断线纸鸢，和一张被夜雨泡烂的寻人告示。有小孩说，夜里看见「糖摊的老婆婆」笑着招手。请与同行神捕循着麦芽糖的甜香，找出掳走孩童的人。', 'p1', '糖摊婆婆以掺了蒙汗药的麦芽糖诱晕孩童，再由被她胁迫的绣坊哑女缝制布老虎、提供藏匿地窖，把孩子\"送\"出去换取银钱。哑女身不由己，罪不至重；主谋糖摊婆婆被当场拿下，七名孩童平安归家。青石镇长街，重新响起孩童的笑闹声。', 3, 3);
+INSERT INTO `team_quest` VALUES ('q107', 2, '甲字第〇二五卷', '魔匣凶杀案', '幽州 · 明德街', '幽州 · 明德街', '📦', '#8e6bd0', '★★★', '约 6 分钟', '一只无人认领的黑漆木匣在明德街辗转三户，谁收匣谁毙命。匣上锁孔完好，匣内却总比昨日多出一物——当票、铜哨、半块玉佩。更诡异的是，三名死者毙命当夜，更夫都没有打过三更。神捕司提匣回衙途中，匣身忽重三斤，随行捕快发誓听见匣内有指甲刮木之声。', 'p1', '「魔匣」是更夫周泰设的局。匣中机关藏毒针，他利用三更不报时的空档潜入，以匣诱人收下、暗中触发机关杀人，取走死者身上财物，再留下一件遗物故弄玄虚。「取一还三」即取一命、留三物以乱视听。所谓匣中鬼声，不过是机关鼠作祟。周泰落网，明德街夜半重闻三更声。', 3, 3);
+INSERT INTO `team_quest` VALUES ('q108', 1, '甲字第〇二六卷', '香消玉殒枯血案', '落花坞 · 妖莲纳血', '云梦泽 · 落花坞', '🌺', '#d94a42', '★★☆', '约 5 分钟', '半月之内，落花坞接连抬出五具女尸。死者衣衫齐整、周身无伤，血却被抽得一干二净，尸身旁齐齐开着一丛紫花。坊间传言坞中有一株「枯血妖莲」，专引迷路女子近前。神捕司封泽查案，请你与同行神捕查清：所谓妖莲，究竟是真是假？谁是真凶？', 'p1', '所谓「枯血妖莲」是洛夫人编出的鬼话。她用醉仙草迷晕过路女子，以乌盆紫花吸血制一种驻颜邪药，金线来自她那件官造织金袍——她原是获罪官员的遗孀。所谓妖莲从不存在，只有人心贪妄。洛夫人认罪伏法，落花坞封锁查抄。', 3, 3);
+
+-- ----------------------------
+-- Table structure for team_quest_clue
+-- ----------------------------
+DROP TABLE IF EXISTS `team_quest_clue`;
+CREATE TABLE `team_quest_clue`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `quest_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '剧本ID',
+  `scene_key` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '所属场景(s1等)',
+  `clue_key` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '线索点标识(c1~c9)',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '场景内顺序',
+  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '可疑点名称',
+  `icon` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '图标(emoji)',
+  `found_text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '查得的线索内容',
+  `points` int NOT NULL DEFAULT 0 COMMENT '积分',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_quest_clue`(`quest_id` ASC, `clue_key` ASC) USING BTREE,
+  INDEX `fk_clue_quest`(`quest_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 28 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-线索点表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_quest_clue
+-- ----------------------------
+INSERT INTO `team_quest_clue` VALUES (1, 'q108', 's1', 'c1', 1, '尸身', '🧍', '死者周身无伤，唯十指指尖泛青，像是中毒而非被杀。', 10);
+INSERT INTO `team_quest_clue` VALUES (2, 'q108', 's1', 'c2', 2, '紫花丛', '🌸', '花瓣凝血、根须却白得发亮——花是被人移种到这里，吸了血才开。', 10);
+INSERT INTO `team_quest_clue` VALUES (3, 'q108', 's1', 'c3', 3, '泥中脚印', '👣', '尸体周围只有一行男人的大脚印，来路方向通向坞主宅院。', 15);
+INSERT INTO `team_quest_clue` VALUES (4, 'q108', 's2', 'c4', 1, '血样', '🩸', '五名死者血中都有同一种迷香成分，闻之令人神志恍惚。', 15);
+INSERT INTO `team_quest_clue` VALUES (5, 'q108', 's2', 'c5', 2, '指缝金线', '🧵', '第五名死者指缝里攥着一缕织金线，是官造贡品的料子。', 15);
+INSERT INTO `team_quest_clue` VALUES (6, 'q108', 's2', 'c6', 3, '香灰', '🕯️', '棚角香炉灰里混着「醉仙草」——落花坞坞主上月刚采买过一批。', 20);
+INSERT INTO `team_quest_clue` VALUES (7, 'q108', 's3', 'c7', 1, '账册', '📖', '账册记着每月采买醉仙草与大批乌盆，用途栏写着「养花」。', 15);
+INSERT INTO `team_quest_clue` VALUES (8, 'q108', 's3', 'c8', 2, '贡品匣', '📦', '匣中是一件官造织金袍，袖口恰好缺了一缕——与死者指缝金线同源。', 20);
+INSERT INTO `team_quest_clue` VALUES (9, 'q108', 's3', 'c9', 3, '后门小船', '🛶', '后门泊着一条小船，船底沾着与现场一致的湿泥。', 10);
+INSERT INTO `team_quest_clue` VALUES (10, 'q107', 's1', 'c1', 1, '黑漆木匣', '📦', '匣身锁孔完好无损，匣盖边缘却有从内向外顶开的抓痕。', 15);
+INSERT INTO `team_quest_clue` VALUES (11, 'q107', 's1', 'c2', 2, '匣底刻字', '🔤', '匣底一行几乎磨平的小字：「明德高悬，取一还三」。', 20);
+INSERT INTO `team_quest_clue` VALUES (12, 'q107', 's1', 'c3', 3, '当票', '🎫', '匣中第一件遗物是当票，底下压着当铺最后一笔账：当的是一面铜镜。', 10);
+INSERT INTO `team_quest_clue` VALUES (13, 'q107', 's2', 'c4', 1, '铜哨', '🎵', '货郎的铜哨出现在匣中，哨口有细微的齿痕。', 10);
+INSERT INTO `team_quest_clue` VALUES (14, 'q107', 's2', 'c5', 2, '半块玉佩', '💠', '古董商的半块玉佩，断口新鲜——像是被人强行掰开。', 10);
+INSERT INTO `team_quest_clue` VALUES (15, 'q107', 's2', 'c6', 3, '更鼓', '🥁', '两名死者都住在更夫值房附近，三夜更夫都没打三更。', 20);
+INSERT INTO `team_quest_clue` VALUES (16, 'q107', 's3', 'c7', 1, '匣内夹层', '🔎', '撬开夹层，里面藏着一张明德街的巡更路线图，三更那段被人划掉。', 20);
+INSERT INTO `team_quest_clue` VALUES (17, 'q107', 's3', 'c8', 2, '机关', '⚙️', '匣盖内侧有弹簧机关，从内一顶便弹开，可夹带毒针。', 15);
+INSERT INTO `team_quest_clue` VALUES (18, 'q107', 's3', 'c9', 3, '刮木声', '🔊', '所谓「指甲刮木」是机关里一只被困的机关鼠，定时触发。', 15);
+INSERT INTO `team_quest_clue` VALUES (19, 'q101', 's1', 'c1', 1, '布老虎', '🧸', '布老虎的填充物是自家缝的粗布，针脚与城西绣坊手法一致。', 15);
+INSERT INTO `team_quest_clue` VALUES (20, 'q101', 's1', 'c2', 2, '断线纸鸢', '🪁', '纸鸢线断口沾着麦芽糖浆，甜香在夜里能飘出很远。', 15);
+INSERT INTO `team_quest_clue` VALUES (21, 'q101', 's1', 'c3', 3, '寻人告示', '📜', '告示被雨泡烂，但落款处盖着糖摊的朱记。', 10);
+INSERT INTO `team_quest_clue` VALUES (22, 'q101', 's2', 'c4', 1, '糖锅', '🍯', '糖锅里除了麦芽糖，还掺着少量蒙汗药，闻久了会犯困。', 20);
+INSERT INTO `team_quest_clue` VALUES (23, 'q101', 's2', 'c5', 2, '货筐', '🧺', '筐底藏着几缕孩童的青丝，与失踪孩童发色一致。', 15);
+INSERT INTO `team_quest_clue` VALUES (24, 'q101', 's2', 'c6', 3, '供货单', '🧾', '供货单上写着「绣坊·哑女」，麦芽糖与粗布都从那里来。', 20);
+INSERT INTO `team_quest_clue` VALUES (25, 'q101', 's3', 'c7', 1, '地窖', '🕳️', '地窖里锁着七名孩童，都昏睡着，安然无恙。', 15);
+INSERT INTO `team_quest_clue` VALUES (26, 'q101', 's3', 'c8', 2, '绣坊哑女', '👩‍🦯', '哑女比比划划：她被人胁迫，糖摊老婆婆才是主谋。', 10);
+INSERT INTO `team_quest_clue` VALUES (27, 'q101', 's3', 'c9', 3, '账本', '📒', '账本记着每\"送\"一个孩子，就从外头领一笔银子。', 20);
+
+-- ----------------------------
+-- Table structure for team_quest_question
+-- ----------------------------
+DROP TABLE IF EXISTS `team_quest_question`;
+CREATE TABLE `team_quest_question`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `quest_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '剧本ID',
+  `q_index` int NOT NULL COMMENT '题号(0起)',
+  `question` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '题干',
+  `options_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '选项JSON数组',
+  `answer` int NOT NULL DEFAULT 0 COMMENT '正确选项下标',
+  `explain` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '答案解析',
+  `points` int NOT NULL DEFAULT 0 COMMENT '答对得分',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_quest_question`(`quest_id` ASC, `q_index` ASC) USING BTREE,
+  INDEX `fk_question_quest`(`quest_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-推理题表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_quest_question
+-- ----------------------------
+INSERT INTO `team_quest_question` VALUES (1, 'q108', 0, '死者的真正死因是什么？', '[\"妖莲吸血而亡\",\"迷香致幻后被抽血\",\"利刃割喉\",\"溺水窒息\"]', 1, '仵作在血中验出迷香，指尖泛青是中毒之象——先被迷倒，再被抽血。', 20);
+INSERT INTO `team_quest_question` VALUES (2, 'q108', 1, '哪条线索最能指向凶手的身份？', '[\"紫花成丛\",\"泽边脚印\",\"指缝里的官造金线\",\"渔夫的证词\"]', 2, '官造织金线非寻常人家所有，坞主书房那件缺袖金袍正好对上。', 25);
+INSERT INTO `team_quest_question` VALUES (3, 'q108', 2, '「妖莲」传说的真相是？', '[\"确有妖物作祟\",\"有人编造鬼话掩盖罪行\",\"花沾了血成了精\",\"道士作法所困\"]', 1, '花是人为移种、以血浇灌的普通紫花，传说只是掩护采买迷香与抽血的烟幕。', 25);
+INSERT INTO `team_quest_question` VALUES (4, 'q107', 0, '匣盖为何「无锁自开」？', '[\"有钥匙\",\"内有弹簧机关\",\"鬼神作祟\",\"死者力气大\"]', 1, '匣盖内侧有弹簧机关，从内一顶便弹开，还可夹带毒针。', 20);
+INSERT INTO `team_quest_question` VALUES (5, 'q107', 1, '哪条线索锁定了凶手的作案时间？', '[\"匣底刻字\",\"当票\",\"三夜更夫未打三更\",\"玉佩断口\"]', 2, '三夜都没打三更，说明更夫那段时间的行踪是空白，正好作案。', 25);
+INSERT INTO `team_quest_question` VALUES (6, 'q107', 2, '匣里的「指甲刮木声」是什么？', '[\"冤魂哭号\",\"机关鼠\",\"风声\",\"邻居挠墙\"]', 1, '夹层里被困的机关鼠定时触发，制造闹鬼假象。', 25);
+INSERT INTO `team_quest_question` VALUES (7, 'q101', 0, '孩子们是被什么手段带走？', '[\"暴力掳走\",\"掺蒙汗药的麦芽糖诱晕\",\"妖法迷惑\",\"自己走失\"]', 1, '糖锅里掺了蒙汗药，纸鸢线断口也沾着糖浆，孩子是闻甜香被诱晕的。', 20);
+INSERT INTO `team_quest_question` VALUES (8, 'q101', 1, '绣坊哑女在其中扮演什么角色？', '[\"主谋\",\"被胁迫的帮手\",\"无关路人\",\"报信人\"]', 1, '布老虎出自绣坊，地窖也由她提供，但她是被胁迫的，并非主谋。', 25);
+INSERT INTO `team_quest_question` VALUES (9, 'q101', 2, '谁才是真正的幕后人？', '[\"糖摊婆婆\",\"绣坊哑女\",\"更夫\",\"卖货郎\"]', 0, '糖摊供货、朱记告示、账本收银，线索都指向糖摊婆婆。', 25);
+
+-- ----------------------------
+-- Table structure for team_quest_scene
+-- ----------------------------
+DROP TABLE IF EXISTS `team_quest_scene`;
+CREATE TABLE `team_quest_scene`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `quest_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '剧本ID',
+  `scene_key` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '场景标识(s1/s2/s3)',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '场景顺序',
+  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '场景名',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '场景描述',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_quest_scene`(`quest_id` ASC, `scene_key` ASC) USING BTREE,
+  INDEX `fk_scene_quest`(`quest_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-勘查场景表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_quest_scene
+-- ----------------------------
+INSERT INTO `team_quest_scene` VALUES (1, 'q108', 's1', 1, '泽边第一现场', '晨雾未散，第五具女尸刚被抬走，紫色花丛在湿泥里开得妖异。');
+INSERT INTO `team_quest_scene` VALUES (2, 'q108', 's2', 2, '仵作验尸棚', '严三火支起棚子，一具具尸体排开，空气中浮着奇异的甜香。');
+INSERT INTO `team_quest_scene` VALUES (3, 'q108', 's3', 3, '坞主宅院', '依水而建的小楼，回廊挂满风干的药草，书房还亮着灯。');
+INSERT INTO `team_quest_scene` VALUES (4, 'q107', 's1', 1, '明德街当铺', '当铺门缝里塞进木匣之处，朝奉钱有禄的尸身刚被移走。');
+INSERT INTO `team_quest_scene` VALUES (5, 'q107', 's2', 2, '货郎与古董商家', '两处毙命现场，死状一模一样，七窍无血、双目圆睁。');
+INSERT INTO `team_quest_scene` VALUES (6, 'q107', 's3', 3, '神捕司验匣', '木匣锁进铁柜，夜里仍有守卒听见匣中刮木之声。');
+INSERT INTO `team_quest_scene` VALUES (7, 'q101', 's1', 1, '长街失踪地', '七名孩童最后出现的地方，散落着他们的玩物。');
+INSERT INTO `team_quest_scene` VALUES (8, 'q101', 's2', 2, '城西糖摊', '长街角一个不起眼的糖摊，老婆婆正慢悠悠地熬着糖。');
+INSERT INTO `team_quest_scene` VALUES (9, 'q101', 's3', 3, '绣坊后院', '绣坊后院传来细小的响动，门虚掩着。');
+
+-- ----------------------------
+-- Table structure for team_quest_suspect
+-- ----------------------------
+DROP TABLE IF EXISTS `team_quest_suspect`;
+CREATE TABLE `team_quest_suspect`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `quest_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '剧本ID',
+  `suspect_key` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '嫌疑人标识(p1~p4)',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '展示顺序',
+  `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '嫌疑人姓名',
+  `role` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '身份',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '人物描述',
+  `avatar` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '头像(emoji)',
+  `is_culprit` tinyint NOT NULL DEFAULT 0 COMMENT '是否真凶(1是)',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_quest_suspect`(`quest_id` ASC, `suspect_key` ASC) USING BTREE,
+  INDEX `fk_suspect_quest`(`quest_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-嫌疑人表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_quest_suspect
+-- ----------------------------
+INSERT INTO `team_quest_suspect` VALUES (1, 'q108', 'p1', 1, '洛夫人', '落花坞坞主', '年过四旬，经营花坞多年，热衷以奇花待客。', '👩', 1);
+INSERT INTO `team_quest_suspect` VALUES (2, 'q108', 'p2', 2, '严三火', '随行仵作', '神捕司仵作，验尸时不慎沾了迷香，此刻仍有些昏沉。', '🧑‍⚕️', 0);
+INSERT INTO `team_quest_suspect` VALUES (3, 'q108', 'p3', 3, '渔夫老莫', '泽上渔夫', '常在泽边打鱼，称常看见有女子自行走入花丛。', '🧔', 0);
+INSERT INTO `team_quest_suspect` VALUES (4, 'q108', 'p4', 4, '云游道士', '借宿术士', '近日借宿坞中，四处兜售「辟邪符」，言行蹊跷。', '🧙', 0);
+INSERT INTO `team_quest_suspect` VALUES (5, 'q107', 'p1', 1, '更夫周泰', '明德街更夫', '掌管夜间报时，三夜未打三更，行踪成谜。', '🏮', 1);
+INSERT INTO `team_quest_suspect` VALUES (6, 'q107', 'p2', 2, '当铺朝奉', '钱有禄（殁）', '木匣第一位收主，已毙命，似为受害人。', '💀', 0);
+INSERT INTO `team_quest_suspect` VALUES (7, 'q107', 'p3', 3, '货郎', '街边货郎（殁）', '拾匣的第二人，同样一夜毙命。', '🧍', 0);
+INSERT INTO `team_quest_suspect` VALUES (8, 'q107', 'p4', 4, '古董商', '古董商（殁）', '买匣的第三人，死状与前两人一致。', '🎩', 0);
+INSERT INTO `team_quest_suspect` VALUES (9, 'q101', 'p1', 1, '糖摊婆婆', '长街糖摊主', '熬得一手好麦芽糖，夜里常对孩童笑脸相迎。', '👵', 1);
+INSERT INTO `team_quest_suspect` VALUES (10, 'q101', 'p2', 2, '绣坊哑女', '城西绣坊绣娘', '不能言语，针线活做得极好，似有隐情。', '👩‍🦯', 0);
+INSERT INTO `team_quest_suspect` VALUES (11, 'q101', 'p3', 3, '更夫', '青石镇更夫', '夜里巡街，称什么都没看见。', '🏮', 0);
+INSERT INTO `team_quest_suspect` VALUES (12, 'q101', 'p4', 4, '卖货郎', '流动货郎', '常年在长街叫卖，与糖摊有生意往来。', '🧔', 0);
 
 -- ----------------------------
 -- Table structure for team_room
@@ -266,21 +480,40 @@ CREATE TABLE `team_member`  (
 DROP TABLE IF EXISTS `team_room`;
 CREATE TABLE `team_room`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌（6位大写字母数字，唯一）',
-  `case_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '当前案件ID（题库key）',
-  `case_title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '当前案件标题（冗余便于展示）',
-  `owner` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房主（捕快名号）',
-  `status` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'waiting' COMMENT '状态：waiting待开案 / playing答题中 / revealed已揭晓',
-  `round` int NOT NULL DEFAULT 0 COMMENT '已开案轮次',
-  `max_members` int NOT NULL DEFAULT 8 COMMENT '人数上限',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌(6位大写字母数字,唯一)',
+  `quest_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '所选剧本ID',
+  `phase` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'investigate' COMMENT '阶段:investigate/quiz/accuse/result',
+  `owner` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '房主名号',
+  `status` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'playing' COMMENT '状态:playing进行/closed已结案/dissolved已解散',
+  `started_at` datetime NULL DEFAULT NULL COMMENT '开局时间',
+  `result_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '结案结果JSON(真凶/排行榜等)',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_room_code`(`room_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-房间表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-房间表(五阶段版)' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of team_room
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for team_vote
+-- ----------------------------
+DROP TABLE IF EXISTS `team_vote`;
+CREATE TABLE `team_vote`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `room_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '房牌',
+  `username` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '捕快名号',
+  `suspect_id` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '指认的嫌疑人(p1~p4)',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '改票时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_room_user_vote`(`room_code` ASC, `username` ASC) USING BTREE,
+  INDEX `fk_vote_room`(`room_code` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '组队探案-指认投票表(可改票)' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of team_vote
 -- ----------------------------
 
 -- ----------------------------
@@ -294,7 +527,7 @@ CREATE TABLE `user`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入籍时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魅影神捕用户表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魅影神捕用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user
@@ -312,5 +545,7 @@ INSERT INTO `user` VALUES (13, '7777', '04421506adb1a627fd1a06adb67acc53323dbe73
 INSERT INTO `user` VALUES (14, '黎斯', '77e0d706018d102a57fcbc840647a182ab685e5bd368d586edacb8b0e6fd7b7b', '2026-11-16 10:56:20');
 INSERT INTO `user` VALUES (15, 'zk_verify_01', '9502e2520fb3f8c6780026fc7071875b9b2f4c1b8d232cacb1e2a56588ec1058', '2026-11-16 10:56:23');
 INSERT INTO `user` VALUES (16, '9999', 'bd4a5d3f1236d9dabc31584d9c1662a1f4c06ddf29fa29cfc5db5b5a7f9d3949', '2026-11-18 08:46:01');
+INSERT INTO `user` VALUES (17, '34567', '9f94a764ecd91d0f9b5a56e3725d2044de09acdd4a1a53106e0ab591e89c0618', '2026-11-20 15:54:13');
+INSERT INTO `user` VALUES (18, '6789', '758152a0f60fc6cb2fb75c675d04482d52cdbda041aae9f96b6afcebd2976de6', '2026-11-20 16:11:43');
 
 SET FOREIGN_KEY_CHECKS = 1;
